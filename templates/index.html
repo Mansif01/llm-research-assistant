@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Research Assistant</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont,
+                         'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #1a1a2e;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        header h1 { font-size: 1.3rem; }
+        header p { font-size: 0.85rem; opacity: 0.7; }
+
+        .mode-buttons {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .mode-btn {
+            padding: 0.5rem 1.2rem;
+            border: 2px solid #1a1a2e;
+            border-radius: 20px;
+            cursor: pointer;
+            background: white;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            gap: 1rem;
+            overflow-y: auto;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 1rem;
+            border-radius: 12px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .message.user {
+            background: #1a1a2e;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant {
+            background: white;
+            border: 1px solid #e0e0e0;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .sources {
+            margin-top: 0.8rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid #e0e0e0;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .source-tag {
+            display: inline-block;
+            background: #e8f4fd;
+            color: #1a6fa6;
+            padding: 0.2rem 0.6rem;
+            border-radius: 10px;
+            margin: 0.2rem;
+            font-size: 0.75rem;
+        }
+
+        .input-area {
+            padding: 1rem 1.5rem;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .input-area input, .input-area textarea {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            resize: none;
+        }
+
+        .input-area input:focus,
+        .input-area textarea:focus {
+            border-color: #1a1a2e;
+        }
+
+        .send-btn {
+            padding: 0.8rem 1.5rem;
+            background: #1a1a2e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover { background: #2d2d5e; }
+        .send-btn:disabled { background: #999; cursor: not-allowed; }
+
+        .loading {
+            display: none;
+            align-self: flex-start;
+            padding: 1rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-left: 1px solid #e0e0e0;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .suggestion {
+            padding: 0.7rem;
+            background: #f8f8f8;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            transition: background 0.2s;
+            border: 1px solid #e0e0e0;
+        }
+
+        .suggestion:hover { background: #e8f4fd; }
+
+        .clear-btn {
+            width: 100%;
+            padding: 0.6rem;
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div>
+        <h1>🔬 LLM Research Assistant</h1>
+        <p>Powered by RAG — answers grounded in real papers</p>
+    </div>
+</header>
+
+<div class="mode-buttons">
+    <button class="mode-btn active" onclick="setMode('chat')">
+        💬 Chat
+    </button>
+    <button class="mode-btn" onclick="setMode('ideas')">
+        💡 Generate Ideas
+    </button>
+    <button class="mode-btn" onclick="setMode('recommend')">
+        📚 Recommend Papers
+    </button>
+</div>
+
+<div class="main-container">
+
+    <div style="flex:1; display:flex; flex-direction:column;">
+
+        <div class="chat-area" id="chatArea">
+            <div class="message assistant">
+                👋 Hello! I am your research assistant. I can help you:
+                <br><br>
+                • <strong>Answer questions</strong> about research topics
+                  using our paper database<br>
+                • <strong>Generate research ideas</strong> based on existing
+                  literature<br>
+                • <strong>Recommend papers</strong> relevant to your interests
+                <br><br>
+                What would you like to explore today?
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            🤔 Searching papers and generating response...
+        </div>
+
+        <!-- Chat mode input -->
+        <div class="input-area" id="chatInput">
+            <input
+                type="text"
+                id="messageInput"
+                placeholder="Ask a research question..."
+                onkeypress="handleKeyPress(event)"
+            >
+            <button class="send-btn" onclick="sendMessage()" id="sendBtn">
+                Send
+            </button>
+        </div>
+
+        <!-- Ideas mode input -->
+        <div class="input-area" id="ideasInput" style="display:none; flex-direction:column; gap:0.5rem;">
+            <input
+                type="text"
+                id="topicInput"
+                placeholder="Research topic (e.g. data quality visualisation)"
+            >
+            <textarea
+                id="existingWorkInput"
+                placeholder="Optional: describe your existing work..."
+                rows="2"
+            ></textarea>
+            <button class="send-btn" onclick="getIdeas()">
+                Generate Ideas
+            </button>
+        </div>
+
+        <!-- Recommend mode input -->
+        <div class="input-area" id="recommendInput" style="display:none;">
+            <input
+                type="text"
+                id="interestInput"
+                placeholder="Describe your research interest..."
+                onkeypress="handleRecommendKeyPress(event)"
+            >
+            <button class="send-btn" onclick="getPapers()">
+                Find Papers
+            </button>
+        </div>
+
+    </div>
+
+    <div class="sidebar">
+        <h3>Quick Questions</h3>
+
+        <div class="suggestion" onclick="quickAsk('What is RAG and how does it work?')">
+            What is RAG and how does it work?
+        </div>
+        <div class="suggestion" onclick="quickAsk('What are the main limitations of current LLMs?')">
+            Limitations of current LLMs?
+        </div>
+        <div class="suggestion" onclick="quickAsk('What research gaps exist in data profiling?')">
+            Research gaps in data profiling?
+        </div>
+        <div class="suggestion" onclick="quickAsk('How do I evaluate an AI system?')">
+            How to evaluate an AI system?
+        </div>
+        <div class="suggestion" onclick="quickAsk('What visualisation techniques work best for complex data?')">
+            Best visualisation techniques?
+        </div>
+
+        <button class="clear-btn" onclick="clearHistory()">
+            🗑 Clear Conversation
+        </button>
+    </div>
+
+</div>
+
+<script>
+let currentMode = 'chat';
+
+function setMode(mode) {
+    currentMode = mode;
+
+    // Update buttons
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Show correct input
+    document.getElementById('chatInput').style.display =
+        mode === 'chat' ? 'flex' : 'none';
+    document.getElementById('ideasInput').style.display =
+        mode === 'ideas' ? 'flex' : 'none';
+    document.getElementById('recommendInput').style.display =
+        mode === 'recommend' ? 'flex' : 'none';
+}
+
+function addMessage(content, role, sources=[]) {
+    const chatArea = document.getElementById('chatArea');
+    const div = document.createElement('div');
+    div.className = `message ${role}`;
+
+    // Convert markdown-style bold to HTML
+    content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    content = content.replace(/\n/g, '<br>');
+
+    div.innerHTML = content;
+
+    // Add sources if provided
+    if (sources && sources.length > 0) {
+        const sourcesDiv = document.createElement('div');
+        sourcesDiv.className = 'sources';
+        sourcesDiv.innerHTML = '📄 Sources: ';
+        sources.forEach(source => {
+            const tag = document.createElement('span');
+            tag.className = 'source-tag';
+            tag.textContent = `${source.title} (${source.year})`;
+            sourcesDiv.appendChild(tag);
+        });
+        div.appendChild(sourcesDiv);
+    }
+
+    chatArea.appendChild(div);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function setLoading(show) {
+    document.getElementById('loading').style.display =
+        show ? 'block' : 'none';
+    document.getElementById('sendBtn').disabled = show;
+}
+
+async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    if (!message) return;
+
+    addMessage(message, 'user');
+    input.value = '';
+    setLoading(true);
+
+    try {
+        const response = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message})
+        });
+
+        const data = await response.json();
+        addMessage(data.answer, 'assistant', data.sources);
+
+    } catch (error) {
+        addMessage('Sorry, something went wrong. Please try again.',
+                   'assistant');
+    }
+
+    setLoading(false);
+}
+
+async function getIdeas() {
+    const topic = document.getElementById('topicInput').value.trim();
+    const existingWork = document.getElementById('existingWorkInput').value;
+
+    if (!topic) return;
+
+    addMessage(`Generate research ideas about: ${topic}`, 'user');
+    setLoading(true);
+
+    try {
+        const response = await fetch('/ideas', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({topic, existing_work: existingWork})
+        });
+
+        const data = await response.json();
+        addMessage(data.ideas, 'assistant');
+
+    } catch (error) {
+        addMessage('Sorry, something went wrong.', 'assistant');
+    }
+
+    setLoading(false);
+}
+
+async function getPapers() {
+    const interest = document.getElementById('interestInput').value.trim();
+    if (!interest) return;
+
+    addMessage(`Find papers about: ${interest}`, 'user');
+    setLoading(true);
+
+    try {
+        const response = await fetch('/recommend', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({interest})
+        });
+
+        const data = await response.json();
+
+        let responseText = data.explanations + '\n\n**Papers found:**\n';
+        data.papers.forEach((p, i) => {
+            responseText += `\n${i+1}. **${p.title}** — ${p.authors} (${p.year})`;
+        });
+
+        addMessage(responseText, 'assistant');
+
+    } catch (error) {
+        addMessage('Sorry, something went wrong.', 'assistant');
+    }
+
+    setLoading(false);
+}
+
+async function clearHistory() {
+    await fetch('/clear', {method: 'POST'});
+    document.getElementById('chatArea').innerHTML = `
+        <div class="message assistant">
+            Conversation cleared. How can I help you?
+        </div>`;
+}
+
+function quickAsk(question) {
+    document.getElementById('messageInput').value = question;
+    setMode('chat');
+    sendMessage();
+}
+
+function handleKeyPress(e) {
+    if (e.key === 'Enter') sendMessage();
+}
+
+function handleRecommendKeyPress(e) {
+    if (e.key === 'Enter') getPapers();
+}
+</script>
+
+</body>
+</html>
