@@ -1,0 +1,30 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment variables and API keys -- never commit these
+.env
+*.env
+
+# Database files -- ChromaDB creates these automatically
+paper_database/
+
+# PDF papers -- large files, do not upload
+papers/
+
+# IDE files
+.idea/
+.vscode/
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Large test files
+*.csv
