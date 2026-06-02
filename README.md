@@ -40,17 +40,7 @@ The tool has three modes:
 
 ## How It Works
 
-You type a question ->
-
-System converts your question to a vector (numbers representing meaning) ->
-
-ChromaDB finds the 5 most similar paper chunks in the database ->
-
-Those chunks are sent to Llama 3 on Hugging Face as context ->
-
-Llama 3 generates an answer using ONLY that context ->
-
-Answer appears with source citations
+You type a question -> System converts your question to a vector (numbers representing meaning) -> ChromaDB finds the 5 most similar paper chunks in the database -> Those chunks are sent to Llama 3 on Hugging Face as context -> Llama 3 generates an answer using ONLY that context -> Answer appears with source citations
 
 
 
