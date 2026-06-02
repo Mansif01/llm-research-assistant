@@ -49,7 +49,7 @@ def chat():
     return jsonify({
         'answer': result['answer'],
         'sources': result['sources'],
-        'retrieved_chunks': result['retrieved_chunks']
+        'retrieved_chunks': result.get('retrieved_chunks', 0)  # ← safe
     })
 
 
@@ -87,6 +87,56 @@ def clear_history():
     """Clear conversation history"""
     session['conversation_history'] = []
     return jsonify({'status': 'cleared'})
+
+
+@app.route('/fetch_papers', methods=['POST'])
+def fetch_papers():
+    """
+    Let users search for and add papers from the web interface.
+    Searches both Semantic Scholar and ArXiv.
+    """
+    from paper_fetcher import search_all_sources
+
+    data = request.json
+    query = data.get('query', '').strip()
+
+    if not query:
+        return jsonify({'error': 'Please enter a search topic'}), 400
+
+    if len(query) < 3:
+        return jsonify({'error': 'Query too short'}), 400
+
+    try:
+        count = search_all_sources(
+            query,
+            ss_papers=8,
+            arxiv_papers=5
+        )
+
+        return jsonify({
+            'success': True,
+            'message': f'Added {count} new papers for: {query}',
+            'count': count
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/database_stats', methods=['GET'])
+def database_stats():
+    """Return current database statistics"""
+    from paper_fetcher import get_database_stats
+
+    try:
+        stats = get_database_stats()
+        return jsonify(stats)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':

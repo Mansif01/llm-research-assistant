@@ -1,5 +1,5 @@
 flask
-anthropic
+huggingface_hub
 chromadb
 sentence-transformers
 pymupdf

@@ -218,19 +218,40 @@
 
     <div style="flex:1; display:flex; flex-direction:column;">
 
-        <div class="chat-area" id="chatArea">
-            <div class="message assistant">
-                👋 Hello! I am your research assistant. I can help you:
-                <br><br>
-                • <strong>Answer questions</strong> about research topics
-                  using our paper database<br>
-                • <strong>Generate research ideas</strong> based on existing
-                  literature<br>
-                • <strong>Recommend papers</strong> relevant to your interests
-                <br><br>
-                What would you like to explore today?
-            </div>
-        </div>
+        <!-- CHAT MODE HISTORY -->
+<div class="chat-area" id="chatArea" style="display:flex;">
+    <div class="message assistant">
+        👋 Hello! I am your research assistant.<br><br>
+        • <strong>Ask questions</strong> about research topics<br>
+        • Answers are grounded in real papers with citations<br><br>
+        What would you like to explore today?
+    </div>
+</div>
+
+<!-- IDEAS MODE HISTORY -->
+<div class="chat-area" id="ideasArea">
+    <div class="message assistant">
+        💡 <strong>Research Idea Generator</strong><br><br>
+        How to use this tab:<br><br>
+        1. <strong>Research Topic</strong> — enter the area you want ideas in<br>
+        &nbsp;&nbsp;&nbsp;e.g. <em>data profiling visualisation</em><br><br>
+        2. <strong>Your Existing Work</strong> — optionally describe what you have already built<br>
+        &nbsp;&nbsp;&nbsp;e.g. <em>I built a tool that shows missing values and outliers</em><br><br>
+        The system will search the paper database for gaps and limitations then suggest 5 novel research directions tailored to your context.<br><br>
+        Fill in the fields below and click Generate Research Ideas.
+    </div>
+</div>
+
+<!-- RECOMMEND MODE HISTORY -->
+<div class="chat-area" id="recommendArea" style="display:none;">
+    <div class="message assistant">
+        📚 Paper Recommender<br><br>
+        • Describe your research interest below<br>
+        • I will find the most relevant papers in the database<br>
+        • And explain why each one matters for your work<br><br>
+        What are you researching?
+    </div>
+</div>
 
         <div class="loading" id="loading">
             🤔 Searching papers and generating response...
@@ -249,21 +270,49 @@
             </button>
         </div>
 
-        <!-- Ideas mode input -->
-        <div class="input-area" id="ideasInput" style="display:none; flex-direction:column; gap:0.5rem;">
-            <input
-                type="text"
-                id="topicInput"
-                placeholder="Research topic (e.g. data quality visualisation)"
-            >
-            <textarea
-                id="existingWorkInput"
-                placeholder="Optional: describe your existing work..."
-                rows="2"
-            ></textarea>
-            <button class="send-btn" onclick="getIdeas()">
-                Generate Ideas
-            </button>
+
+        <!-- IDEAS TAB INPUT -->
+<div class="input-area column" id="ideasInput">
+
+    <div style="display:flex; flex-direction:column; gap:0.4rem;">
+
+        <label style="font-size:0.8rem; color:#666; font-weight:500;">
+            Research Topic *
+        </label>
+        <input
+            type="text"
+            id="topicInput"
+            placeholder="e.g. data profiling for non-technical users"
+            onkeypress="if(event.key==='Enter') getIdeas()"
+            style="padding:0.8rem 1rem; border:2px solid #e0e0e0;
+                   border-radius:8px; font-size:0.95rem; outline:none;"
+            onfocus="this.style.borderColor='#1a1a2e'"
+            onblur="this.style.borderColor='#e0e0e0'"
+        >
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:0.4rem;">
+
+        <label style="font-size:0.8rem; color:#666; font-weight:500;">
+            Your Existing Work (optional — helps personalise ideas)
+        </label>
+        <textarea
+            id="existingWorkInput"
+            placeholder="e.g. I built a data profiling tool with Flask and D3.js that shows missing values and outliers..."
+            rows="3"
+            style="padding:0.8rem 1rem; border:2px solid #e0e0e0;
+                   border-radius:8px; font-size:0.9rem; outline:none;
+                   resize:none;"
+            onfocus="this.style.borderColor='#1a1a2e'"
+            onblur="this.style.borderColor='#e0e0e0'"
+        ></textarea>
+
+        </div>
+
+        <button class="send-btn" id="ideasSendBtn" onclick="getIdeas()">
+            💡 Generate Research Ideas
+        </button>
+
         </div>
 
         <!-- Recommend mode input -->
@@ -303,6 +352,166 @@
         <button class="clear-btn" onclick="clearHistory()">
             🗑 Clear Conversation
         </button>
+
+        <div style="margin-top:1.5rem; border-top:1px solid #e0e0e0;
+            padding-top:1.2rem;">
+
+    <h3>Add Papers to Database</h3>
+
+    <p style="font-size:0.8rem; color:#888; margin-bottom:0.8rem;">
+        Search Semantic Scholar and ArXiv automatically
+    </p>
+
+    <!-- Search input -->
+    <input
+        type="text"
+        id="fetchQuery"
+        placeholder="e.g. data quality visualization"
+        style="width:100%;
+               padding:0.5rem 0.7rem;
+               border:1.5px solid #e0e0e0;
+               border-radius:6px;
+               font-size:0.85rem;
+               margin-bottom:0.5rem;
+               outline:none;
+               box-sizing:border-box;"
+        onkeypress="if(event.key==='Enter') fetchPapers()"
+        onfocus="this.style.borderColor='#1a1a2e'"
+        onblur="this.style.borderColor='#e0e0e0'"
+    >
+
+    <!-- Fetch button -->
+    <button
+        id="fetchBtn"
+        onclick="fetchPapers()"
+        style="width:100%;
+               padding:0.55rem;
+               background:#1a1a2e;
+               color:white;
+               border:none;
+               border-radius:6px;
+               cursor:pointer;
+               font-size:0.85rem;
+               margin-bottom:0.4rem;
+               transition:background 0.2s;">
+        🔍 Search and Add Papers
+    </button>
+
+    <!-- Stats button -->
+    <button
+        onclick="showDatabaseStats()"
+        style="width:100%;
+               padding:0.45rem;
+               background:#f5f5f5;
+               color:#555;
+               border:1px solid #e0e0e0;
+               border-radius:6px;
+               cursor:pointer;
+               font-size:0.8rem;">
+        📊 Show Database Stats
+    </button>
+
+    <!-- Status message -->
+    <div id="fetchStatus"
+         style="margin-top:0.6rem;
+                font-size:0.8rem;
+                min-height:18px;
+                color:#555;
+                line-height:1.4;">
+    </div>
+
+</div>
+
+<!-- ================================================ -->
+<!-- ADD THIS JAVASCRIPT BEFORE </script> TAG        -->
+<!-- ================================================ -->
+
+<script>
+async function fetchPapers() {
+    const query = document.getElementById('fetchQuery').value.trim();
+    const status = document.getElementById('fetchStatus');
+    const btn = document.getElementById('fetchBtn');
+
+    if (!query) {
+        status.textContent = '⚠ Please enter a topic first';
+        status.style.color = '#e67e22';
+        return;
+    }
+
+    // Show loading state
+    btn.disabled = true;
+    btn.textContent = '⏳ Searching...';
+    btn.style.background = '#666';
+    status.style.color = '#555';
+    status.textContent = 'Searching Semantic Scholar and ArXiv...';
+
+    try {
+        const response = await fetch('/fetch_papers', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({query: query})
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            status.style.color = '#27ae60';
+            status.textContent = '✅ ' + data.message;
+
+            // Clear the input
+            document.getElementById('fetchQuery').value = '';
+
+        } else {
+            status.style.color = '#e74c3c';
+            status.textContent = '❌ ' + (data.error || 'Something went wrong');
+        }
+
+    } catch (error) {
+        status.style.color = '#e74c3c';
+        status.textContent = '❌ Network error. Is the server running?';
+    }
+
+    // Reset button
+    btn.disabled = false;
+    btn.textContent = '🔍 Search and Add Papers';
+    btn.style.background = '#1a1a2e';
+}
+
+
+async function showDatabaseStats() {
+    const status = document.getElementById('fetchStatus');
+
+    status.style.color = '#555';
+    status.textContent = '⏳ Loading stats...';
+
+    try {
+        const response = await fetch('/database_stats');
+        const data = await response.json();
+
+        if (data.total !== undefined) {
+            let message = `📚 Database: ${data.total} entries`;
+
+            if (data.sample_papers && data.sample_papers.length > 0) {
+                message += '\n\nRecent papers:';
+                data.sample_papers.slice(0, 3).forEach(p => {
+                    message += `\n• ${p.title.substring(0, 40)}... (${p.year})`;
+                });
+            }
+
+            status.style.color = '#2980b9';
+            status.textContent = message;
+            status.style.whiteSpace = 'pre-line';
+
+        } else {
+            status.textContent = '❌ Could not load stats';
+        }
+
+    } catch (error) {
+        status.style.color = '#e74c3c';
+        status.textContent = '❌ Could not connect to server';
+    }
+}
+</script>
     </div>
 
 </div>
@@ -313,23 +522,46 @@ let currentMode = 'chat';
 function setMode(mode) {
     currentMode = mode;
 
-    // Update buttons
+    // Update tab buttons
     document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     event.target.classList.add('active');
 
-    // Show correct input
-    document.getElementById('chatInput').style.display =
-        mode === 'chat' ? 'flex' : 'none';
-    document.getElementById('ideasInput').style.display =
-        mode === 'ideas' ? 'flex' : 'none';
-    document.getElementById('recommendInput').style.display =
-        mode === 'recommend' ? 'flex' : 'none';
+    // Hide all chat history areas
+    document.getElementById('chatArea').style.display = 'none';
+    document.getElementById('ideasArea').style.display = 'none';
+    document.getElementById('recommendArea').style.display = 'none';
+
+    // Show the correct history area for this mode
+    if (mode === 'chat') {
+        document.getElementById('chatArea').style.display = 'flex';
+    } else if (mode === 'ideas') {
+        document.getElementById('ideasArea').style.display = 'flex';
+    } else if (mode === 'recommend') {
+        document.getElementById('recommendArea').style.display = 'flex';
+    }
+
+    // Hide all input areas
+    document.getElementById('chatInput').style.display = 'none';
+    document.getElementById('ideasInput').style.display = 'none';
+    document.getElementById('recommendInput').style.display = 'none';
+
+    // Show correct input for this mode
+    if (mode === 'chat') {
+        document.getElementById('chatInput').style.display = 'flex';
+    } else if (mode === 'ideas') {
+        document.getElementById('ideasInput').style.display = 'flex';
+    } else if (mode === 'recommend') {
+        document.getElementById('recommendInput').style.display = 'flex';
+    }
 }
 
 function addMessage(content, role, sources=[]) {
-    const chatArea = document.getElementById('chatArea');
+    // Add message to the correct history area based on current mode
+    const areaId = currentMode === 'chat' ? 'chatArea' :
+                   currentMode === 'ideas' ? 'ideasArea' : 'recommendArea';
+    const chatArea = document.getElementById(areaId);
     const div = document.createElement('div');
     div.className = `message ${role}`;
 
@@ -360,7 +592,18 @@ function addMessage(content, role, sources=[]) {
 function setLoading(show) {
     document.getElementById('loading').style.display =
         show ? 'block' : 'none';
-    document.getElementById('sendBtn').disabled = show;
+
+    // Disable the correct send button based on mode
+    if (currentMode === 'chat') {
+        const btn = document.getElementById('sendBtn');
+        if (btn) btn.disabled = show;
+    } else if (currentMode === 'ideas') {
+        const btn = document.querySelector('#ideasInput .send-btn');
+        if (btn) btn.disabled = show;
+    } else if (currentMode === 'recommend') {
+        const btn = document.querySelector('#recommendInput .send-btn');
+        if (btn) btn.disabled = show;
+    }
 }
 
 async function sendMessage() {
@@ -391,30 +634,50 @@ async function sendMessage() {
 }
 
 async function getIdeas() {
-    const topic = document.getElementById('topicInput').value.trim();
-    const existingWork = document.getElementById('existingWorkInput').value;
+    const topicInput = document.getElementById('topicInput');
+    const existingInput = document.getElementById('existingWorkInput');
 
-    if (!topic) return;
+    const topic = topicInput.value.trim();
+    const existingWork = existingInput.value.trim();
 
-    addMessage(`Generate research ideas about: ${topic}`, 'user');
+    if (!topic) {
+        topicInput.focus();
+        return;
+    }
+
+    // Clear BOTH inputs immediately before doing anything else
+    topicInput.value = '';
+    existingInput.value = '';
+
+    // Show what was submitted so user can see their request
+    let displayMessage = `💡 Generate ideas about: ${topic}`;
+    if (existingWork) {
+        displayMessage += `\n\nMy existing work: ${existingWork}`;
+    }
+
+    addMessage(displayMessage, 'user');
     setLoading(true);
 
     try {
         const response = await fetch('/ideas', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({topic, existing_work: existingWork})
+            body: JSON.stringify({
+                topic: topic,
+                existing_work: existingWork
+            })
         });
 
         const data = await response.json();
         addMessage(data.ideas, 'assistant');
 
     } catch (error) {
-        addMessage('Sorry, something went wrong.', 'assistant');
+        addMessage('Sorry, something went wrong. Please try again.', 'assistant');
     }
 
     setLoading(false);
 }
+
 
 async function getPapers() {
     const interest = document.getElementById('interestInput').value.trim();
@@ -448,9 +711,31 @@ async function getPapers() {
 
 async function clearHistory() {
     await fetch('/clear', {method: 'POST'});
+
     document.getElementById('chatArea').innerHTML = `
         <div class="message assistant">
-            Conversation cleared. How can I help you?
+            👋 Hello! I am your research assistant.<br><br>
+            • <strong>Ask questions</strong> about research topics<br>
+            • Answers are grounded in real papers with citations<br><br>
+            What would you like to explore today?
+        </div>`;
+
+    document.getElementById('ideasArea').innerHTML = `
+        <div class="message assistant">
+            💡 Research Idea Generator<br><br>
+            • Enter a research topic below<br>
+            • I will search for gaps in existing literature<br>
+            • And suggest 5 novel research directions<br><br>
+            What topic would you like to explore?
+        </div>`;
+
+    document.getElementById('recommendArea').innerHTML = `
+        <div class="message assistant">
+            📚 Paper Recommender<br><br>
+            • Describe your research interest below<br>
+            • I will find the most relevant papers in the database<br>
+            • And explain why each one matters for your work<br><br>
+            What are you researching?
         </div>`;
 }
 
