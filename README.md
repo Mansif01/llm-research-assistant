@@ -30,11 +30,12 @@ The tool has three modes:
 ![Chat Mode](Screenshots/chat.png)
 
 ### Generate Ideas Mode
-![Generate Ideas](Screenshots/generate_ideas_1.png)(Screenshots/generate_ideas_2.png)
+![Generate Ideas](Screenshots/generate_ideas_1.png)
+![Generate Ideas](Screenshots/generate_ideas_2.png)
 
 ### Recommend Papers Mode
-![Recommend Papers](Screenshots/recommend_papers_1.png)(Screenshots/recommend_papers_2.png)
-
+![Recommend Papers](Screenshots/recommend_papers_1.png)
+![Recommend Papers](Screenshots/recommend_papers_2.png)
 ---
 
 ## How It Works
