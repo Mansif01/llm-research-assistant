@@ -27,7 +27,7 @@ The tool has three modes:
 ## Screenshots
 
 ### Chat Mode — Grounded Answers with Citations
-![Chat Mode](screenshots/chat.png)
+![Chat Mode](Screenshots/chat.png)
 
 ### Generate Ideas Mode
 ![Generate Ideas](screenshots/ideas.png)
